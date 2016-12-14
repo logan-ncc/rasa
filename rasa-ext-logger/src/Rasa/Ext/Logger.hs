@@ -1,14 +1,12 @@
 module Rasa.Ext.Logger (logger) where
 
-import Rasa.State
-import Rasa.Alteration
-import Rasa.Event
+import Rasa.Ext
 
 import Control.Lens
 import Control.Monad
 import Control.Monad.State
 
-logger :: Alteration ()
+logger :: Action ()
 logger = do
   evt <- use event
   liftIO $ when (Init `elem` evt) (writeFile "logs.log" "Event Log\n")

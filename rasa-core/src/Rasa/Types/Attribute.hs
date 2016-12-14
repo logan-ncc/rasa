@@ -1,4 +1,4 @@
-module Rasa.Attributes (fg, bg, style, iattr, Color(..), Style(..), IAttr(..), Attr(..)) where
+module Rasa.Types.Attribute (fg, bg, style, iattr, Color(..), Style(..), IAttr(..), Attr(..)) where
 
 import Data.Default
 import Control.Applicative

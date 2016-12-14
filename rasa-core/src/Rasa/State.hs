@@ -1,8 +1,7 @@
-{-# LANGUAGE TemplateHaskell, Rank2Types, ExistentialQuantification, ScopedTypeVariables  #-}
-module Rasa.State where
+{-# LANGUAGE  Rank2Types, ExistentialQuantification, ScopedTypeVariables  #-}
+module Rasa.State (ext, bufExt, allBufExt) where
 
-import Rasa.Event
-import Rasa.Buffer
+import Rasa.Types hiding (buffers, focused)
 import qualified Rasa.Editor as E
 
 import Unsafe.Coerce
@@ -12,21 +11,6 @@ import Data.Map
 import Control.Lens
 
 
-data Store = Store
-  { _event :: [Event]
-  , _editor :: E.Editor
-  , _extState :: Map TypeRep Ext
-  } deriving (Show)
-
-makeLenses ''Store
-
-instance Default Store where
-  def =
-    Store
-    { _event = [def]
-    , _editor = def
-    , _extState = empty
-    }
 
 focused :: Lens' Store Int
 focused = editor . E.focused

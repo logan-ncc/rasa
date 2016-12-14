@@ -1,7 +1,7 @@
 {-# LANGUAGE Rank2Types, FlexibleContexts #-}
 
 module Rasa.Ext
-  ( Alteration
+  ( Action
   , Buffer
   , BufAction
   , Event(..)
@@ -24,8 +24,5 @@ module Rasa.Ext
   , Attr(..)
   ) where
 
-import Rasa.Attributes
-import Rasa.Alteration
+import Rasa.Types
 import Rasa.State
-import Rasa.Event
-import Rasa.Buffer

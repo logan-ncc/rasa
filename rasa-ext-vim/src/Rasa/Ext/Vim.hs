@@ -34,7 +34,7 @@ getVim = do
 setMode :: VimSt -> BufAction ()
 setMode vimst = bufExt ?= vimst
 
-vim :: Alteration ()
+vim :: Action ()
 vim = do
   evt <- use event
   case evt of

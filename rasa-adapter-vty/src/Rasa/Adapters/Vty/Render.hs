@@ -3,16 +3,18 @@ module Rasa.Adapters.Vty.Render (render') where
 
 import Rasa.Ext
 import Rasa.Editor
-import Rasa.View
 import Rasa.Adapters.Vty.State
 import Rasa.Adapters.Vty.Attributes
 import Control.Monad.IO.Class
 
 import qualified Graphics.Vty as V
 import Control.Lens
+import Control.Arrow (second)
+import Data.List
+import qualified Data.Text as T
 
 class Renderable a b where
-    render :: Size -> a -> b
+  render :: (Int, Int) -> a -> b
 
 instance Renderable Editor V.Image where
     render sz = view $ focusedBuf . to (render sz)
@@ -23,15 +25,27 @@ instance Renderable Buffer V.Image where
         atts <- fmap convertIAttr <$> view attrs
         return $ applyAttrs atts txt
 
-getSize :: Alteration (Int, Int)
+getSize :: Action (Int, Int)
 getSize = do
   v <- getVty
   liftIO $ V.displayBounds $ V.outputIface v
 
-render' :: Alteration ()
+render' :: Action ()
 render' = do
   eState <- use editor
   sz <- getSize
   let pic = V.picForImage $ render sz eState
   v <- getVty
   liftIO $ V.update v pic
+
+textWrap :: Int -> T.Text -> T.Text
+textWrap n = T.dropEnd 1 . T.unlines . unfoldr (splitLine n)
+
+splitLine :: Int -> (T.Text -> Maybe (T.Text, T.Text))
+splitLine n t
+  | T.null t = Nothing
+  | T.compareLength (fst . splitAtNewline $ t) n == LT = Just $ splitAtNewline t
+  | otherwise = Just $ second (T.append "-> ") $ T.splitAt n t
+
+splitAtNewline :: T.Text -> (T.Text, T.Text)
+splitAtNewline = second (T.drop 1) . T.span (/= '\n')

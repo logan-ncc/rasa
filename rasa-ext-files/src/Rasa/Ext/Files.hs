@@ -25,7 +25,7 @@ data BufFileInfo = BufFileInfo
 
 makeLenses ''BufFileInfo
 
-files :: Alteration ()
+files :: Action ()
 files = do
   evt <- use event
   when (Init `elem` evt) loadFiles
@@ -39,10 +39,10 @@ save = do
 setFilename :: String -> BufAction ()
 setFilename fname = bufExt .= (Just $ BufFileInfo fname)
 
-addFile :: String -> T.Text -> Alteration ()
+addFile :: String -> T.Text -> Action ()
 addFile fname txt = addBufferThen txt (setFilename fname)
 
-loadFiles :: Alteration ()
+loadFiles :: Action ()
 loadFiles = do
   fileNames <- liftIO getArgs
   fileTexts <- liftIO $ traverse (TIO.readFile . fromString) fileNames

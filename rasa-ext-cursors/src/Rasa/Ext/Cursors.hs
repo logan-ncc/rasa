@@ -6,13 +6,10 @@ module Rasa.Ext.Cursors
   , moveCursorCoord
   , cursors
   , deleteChar
-  -- , withCursor
   , insertText
   , findNext
   , findPrev
   ) where
-
--- import Debug.Trace
 
 import Rasa.Ext
 import Rasa.Ext.Directive
@@ -45,7 +42,7 @@ displayCursor = do
   c <- fUse cursor
   attrs .= [iattr c (style ReverseVideo), iattr (c+1) (style DefStyle)]
 
-cursors :: Alteration ()
+cursors :: Action ()
 cursors = do
   evt <- use event
   -- Initialize all buffers
@@ -91,52 +88,6 @@ findPrev txt = do
   n <- use $ text.before c.tillPrev txt.to T.length
   moveCursorBy (-n)
 
-
--- startOfBuffer :: Int -> Alteration ()
--- startOfBuffer bufN = moveCursorTo bufN 0
---   liftIO $ print $ "New: " ++ show (fromMaybe (-1) new)
---   where trans n' = let f (Cursor i) = Cursor (i + n')
---                     in (pure f <*>)
-
--- moveCursorBackBy :: Int -> Alteration ()
--- moveCursorBackBy n = moveCursorBy (-n)
--- moveCursorBackBy' :: Int -> Int -> Alteration ()
--- moveCursorBackBy' bufN n = moveCursorBy' bufN (-n)
--- appendText :: Int -> T.Text -> Alteration()
--- appendText bufN txt = do
---   n <- getCursor bufN
---   editor.buffers.ix bufN.text %= insertTextAt n txt
--- findPrev' :: T.Text -> Buffer -> Buffer 
--- findPrev' txt = useCountFor (withInt before . tillPrev txt) moveCursorBackBy
--- findNext' :: T.Text -> Buffer -> Buffer 
--- findNext' txt = useCountFor (withInt after . tillNext txt) moveCursorBy
--- endOfBuffer :: Alteration ()
--- endOfBuffer bufN = do
---   mTxt <- getBufText bufN 
---   length' <- mTxt^?.to T.length
---   moveCursorTo bufN length'
--- findNext :: T.Text -> Alteration ()
--- findNext txt = embed $ focusedBuf %~ findNext' txt
--- findPrev :: T.Text -> Alteration ()
--- findPrev txt = embed $ focusedBuf %~ findPrev' txt
--- deleteTillEOL' :: Buffer -> Buffer
--- deleteTillEOL' = withInt after . tillNext "\n" .~ ""
--- deleteTillEOL :: Alteration ()
--- deleteTillEOL = embed $ focusedBuf %~ deleteTillEOL'
-
--- switchBuf :: Int -> Alteration ()
--- switchBuf n =
---   embed $ execState $
---   do currentBuffer <- use focused
---      numBuffers <- use (buffers . to length)
---      focused .= (n + currentBuffer) `mod` numBuffers
-
-clamp :: Int -> Int -> Int -> Int
-clamp mn mx n
-  | n < mn = mn
-  | n > mx = mx
-  | otherwise = n
-
 asCoord :: T.Text -> Iso' Int Coord
 asCoord txt = iso (toCoord txt) (toOffset txt)
 
@@ -155,3 +106,8 @@ toCoord txt offset = flip runReader txt $ do
       _ -> view $ before offset . tillPrev "\n" . to T.length
   return (row, col)
 
+clamp :: Int -> Int -> Int -> Int
+clamp mn mx n
+  | n < mn = mn
+  | n > mx = mx
+  | otherwise = n

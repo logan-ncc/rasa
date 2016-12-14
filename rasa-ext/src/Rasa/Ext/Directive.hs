@@ -9,31 +9,28 @@ module Rasa.Ext.Directive
   ) where
 
 import Rasa.Ext
-import Rasa.State
-import Rasa.Alteration
-import Rasa.Buffer
 import Control.Monad.IO.Class
 
 import Control.Lens
 import qualified Data.Text as T
 import Data.Monoid
 
-bufDo :: BufAction () -> Alteration ()
-bufDo = Alteration . zoom (buffers . traverse) . getBufAction
+bufDo :: BufAction () -> Action ()
+bufDo = Action . zoom (buffers . traverse) . getBufAction
 
-focusDo :: BufAction () -> Alteration ()
-focusDo = Alteration . zoom focusedBuf . getBufAction
+focusDo :: BufAction () -> Action ()
+focusDo = Action . zoom focusedBuf . getBufAction
 
-addBuffer :: T.Text -> Alteration ()
+addBuffer :: T.Text -> Action ()
 addBuffer txt = buffers %= (++[newBuffer txt])
 
-addBufferThen :: T.Text -> BufAction a -> Alteration a
+addBufferThen :: T.Text -> BufAction a -> Action a
 addBufferThen txt act = do
   (a, newBuf) <- liftIO $ runBufAction (newBuffer txt) act
   buffers %= (++[newBuf])
   return a
 
-exit :: Alteration ()
+exit :: Action ()
 exit = do
   exiting .= True
   event .= [Exit]
