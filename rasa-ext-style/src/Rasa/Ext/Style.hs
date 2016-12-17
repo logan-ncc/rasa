@@ -1,7 +1,9 @@
 {-# language TemplateHaskell #-}
-module Rasa.Ext.Style (styles, addStyle, fg, bg, flair, Color(..), Flair(..), IStyle(..), Style(..)) where
+module Rasa.Ext.Style (style, styles, addStyle, fg, bg, flair, Color(..), Flair(..), IStyle(..), Style(..)) where
 
 import Rasa.Ext
+import Rasa.Ext.Scheduler
+import Rasa.Ext.Directive
 import Control.Lens
 
 import Data.Default
@@ -58,6 +60,9 @@ makeLenses ''Styles
 styles :: Lens' Buffer [IStyle]
 styles = bufExt.styles'
 
+style :: Scheduler ()
+style = afterRender $ bufDo $ styles .= []
+
 instance Default Styles where
   def = Styles []
 
@@ -73,5 +78,5 @@ flair :: Flair -> Style
 flair a = Style (Nothing, Nothing, Just a)
 
 -- Inserts a style into a buffer's style list in sorted order
-addStyle :: IStyle -> Buffer -> Buffer
-addStyle style = styles %~ insert style
+addStyle :: IStyle -> BufAction ()
+addStyle style = styles %= insert style
