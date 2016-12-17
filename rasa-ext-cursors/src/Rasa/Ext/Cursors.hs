@@ -4,7 +4,8 @@ module Rasa.Ext.Cursors
   ( moveCursorsBy
   , moveCursorsBy'
   , moveCursorsTo
-  -- , moveCursorCoord
+  , moveCursorsTo'
+  , moveCursorCoord
   , cursorMain
   , deleteChar
   , insertText
@@ -23,6 +24,7 @@ import Control.Monad.Reader
 import Control.Lens.Text as TL
 import Data.Typeable
 import Data.Default
+import Data.List
 
 import qualified Data.Text as T
 type Coord = (Int, Int)
@@ -34,14 +36,25 @@ makeLenses ''Cursors
 
 instance Default Cursors where
   def = Cursors {
-  _cursors'=[0, 5]
+  _cursors'=[0, 10]
 }
 
--- cursor :: Traversal' Buffer Int
--- cursor = cursors.traverse
+-- Cursors are stored in reverse order, this is because most actions use the cursor offset and deleting
+-- or inserting BEFORE a cursor that's later will shift later cursors before the action is performed.
+-- If we act on the furthest forward cursors first, any shifts don't affect earlier cursors
+cursors :: Lens' Buffer [Int]
+cursors = lens getter setter
+  where
+    getter buf = buf^.bufExt.cursors'
+    setter buf new =
+      let mx = buf^.text.to T.length
+       in buf & bufExt.cursors' .~ (reverse . nub . sort . filter (<= mx)) new
 
-cursors :: Traversal' Buffer [Int]
-cursors = bufExt.cursors'.reversed
+cursorMain :: Scheduler ()
+cursorMain = beforeRender $ bufDo displayCursor
+
+cursor :: Traversal' Buffer Int
+cursor = cursors.traverse
 
 cursorDo :: (Int -> BufAction a) -> BufAction [a]
 cursorDo f = do
@@ -51,8 +64,14 @@ cursorDo f = do
 cursorDo_ :: (Int -> BufAction a) -> BufAction ()
 cursorDo_ = void . cursorDo
 
-moveCursorsTo :: Int -> BufAction ()
-moveCursorsTo loc = cursors .= [loc]
+moveCursorsTo :: (Int -> BufAction Int) -> BufAction ()
+moveCursorsTo f = do
+  oldCursors <- use cursors
+  newCursors <- mapM f oldCursors
+  cursors.partsOf each .= newCursors
+
+moveCursorsTo' :: Int -> BufAction ()
+moveCursorsTo' loc = cursors .= [loc]
 
 moveCursorsBy :: (Int -> BufAction Int) -> BufAction ()
 moveCursorsBy f = do
@@ -61,33 +80,22 @@ moveCursorsBy f = do
   cursors.partsOf each .= zipWith (+) oldCursors newCursors
 
 moveCursorsBy' :: Int -> BufAction ()
-moveCursorsBy' i = cursors.traverse %= (+i)
+moveCursorsBy' i = cursor %= (+i)
 
 displayCursor ::  BufAction ()
 displayCursor = cursorDo_ setStyle
-    where 
+    where
       setStyle :: Int -> BufAction ()
       setStyle c = addStyle (IStyle c (flair ReverseVideo)) >> addStyle (IStyle (c+1) (flair DefFlair))
 
-cursorMain :: Scheduler ()
-cursorMain = beforeRender $ bufDo displayCursor
-
--- moveCursorTo :: Int -> BufAction Int
--- moveCursorTo n = do
---   mx <- use (text.to T.length)
---   return $ clamp 0 mx n
-
--- moveCursorBy :: Int -> Int -> BufAction Int
--- moveCursorBy n c = do
---   mx <- use $ text.to T.length
---   return $ clamp 0 mx (c + n)
-
--- moveCursorCoord :: Coord -> BufAction ()
--- moveCursorCoord coord = do
---   txt <- use text
---   cursor.asCoord txt %= addPair coord
---   where
---     addPair (a, b) (a', b') = (a + a', b + b')
+moveCursorCoord :: Coord -> BufAction ()
+moveCursorCoord coord = moveCursorsTo f
+  where
+    addPair (a, b) (a', b') = (a + a', b + b')
+    f :: Int -> BufAction Int
+    f c = do
+      txt <- use text
+      return $ c & asCoord txt %~ addPair coord
 
 deleteChar :: BufAction ()
 deleteChar = cursorDo_ deleteCharAt

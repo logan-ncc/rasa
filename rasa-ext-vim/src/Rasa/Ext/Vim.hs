@@ -73,18 +73,18 @@ normal (Keypress 'a' _) = moveCursorsBy' 1 >> setMode Insert
 normal (Keypress 'A' _) = endOfLine >> setMode Insert
 normal (Keypress '0' _) = startOfLine
 normal (Keypress '$' _) = endOfLine
-normal (Keypress 'g' _) = moveCursorsTo 0
+normal (Keypress 'g' _) = moveCursorsTo' 0
 
 normal (Keypress 'G' _) = do
   txt <- use text
-  moveCursorsTo $ T.length txt
+  moveCursorsTo' $ T.length txt
 
 normal (Keypress 'o' _) = endOfLine >> insertText "\n" >> moveCursorsBy' 1 >> setMode Insert
 normal (Keypress 'O' _) = startOfLine >> insertText "\n" >> setMode Insert
 normal (Keypress 'h' _) = moveCursorsBy' (-1)
 normal (Keypress 'l' _) = moveCursorsBy' 1
--- normal (Keypress 'k' _) = moveCursorCoord (-1, 0)
--- normal (Keypress 'j' _) = moveCursorCoord (1, 0)
+normal (Keypress 'k' _) = moveCursorCoord (-1, 0)
+normal (Keypress 'j' _) = moveCursorCoord (1, 0)
 normal (Keypress 'w' _) = findNext " " >> moveCursorsBy' 1
 normal (Keypress 'b' _) = moveCursorsBy' (-1) >> findPrev " "
 normal (Keypress 'f' _) = findNext "f"
